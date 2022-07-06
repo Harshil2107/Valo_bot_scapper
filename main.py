@@ -5,8 +5,20 @@
 import requests
 from bs4 import BeautifulSoup
 r= requests.get('https://www.vlr.gg/matches')
-print(r)
+
 soup = BeautifulSoup(r.content, 'html.parser')
 s = soup.find_all('div', class_= 'ml mod-live')
-for lines in s:
-    print(lines)
+live_matchs =[]
+
+for i in s:
+    d = i.parent.parent.findChildren('div', class_="match-item-vs-team-name", recursive=True)
+    match = {}
+    match['link'] = "https://www.vlr.gg" + i.parent.parent.get('href')
+    i = 1
+    for teams in d:
+        match['team'+str(i)] = teams.findChild('div', class_='text-of').text.split()[0]
+        i+=1
+    live_matchs.append(match)
+
+for i in live_matchs:
+    print(i)
