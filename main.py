@@ -41,7 +41,7 @@ async def live_matches(ctx: interactions.CommandContext):
     live = getLiveMatches()
     ret = ""
     if (len(live) == 0):
-        await ctx.send("No live matchs")
+        await ctx.send("No live matches")
     for i in live:
         ret += f"{i['team1']} VS {i['team2']}  \n VLR: {i['link']} \n"
     await ctx.send(ret)
@@ -52,6 +52,12 @@ def getMatchScore(match_data):
     r = requests.get("https://www.vlr.gg/114530/akrew-vs-knights-nerd-street-summer-championship-2022-open-12-gf")
     # r = requests.get(match_data["link"])
     soup = BeautifulSoup(r.content, 'html.parser')
+    event = soup.find('div', class_="match-header-super")
+    ev_txt = event.findChild('div').findChild('div').text.split()
+    str = ""
+    for i in ev_txt:
+        str += i + " "
+    live_dict["event"] = str
     map_data_div = soup.find('div', class_="js-spoiler")
     # print(map_data_div)
     children = map_data_div.findChildren('span')
@@ -81,14 +87,83 @@ def getMatchScore(match_data):
     scope=994186669265784922
 )
 async def live_match_scores(ctx: interactions.CommandContext):
+
     live = getLiveMatches()
     ret = ""
     if (len(live) == 0):
         await ctx.send("No live matches")
-    for i in live:
-        live_dict = getMatchScore(i)
-        ret += f"__**{i['team1']} VS {i['team2']}**__\n Maps: {live_dict['maps'][0]}, {live_dict['maps'][1]}, {live_dict['maps'][2]} \n Current Map: {live_dict['cur_map']} \n Map Score: {live_dict['map_score']} \n Current Map Score: {live_dict['cur_score']} \n VLR: {i['link']} \n"
-    await ctx.send(ret)
+    else:
+        await ctx.send("Sent Match Data in DM")
+        for i in live:
+            live_dict = getMatchScore(i)
+            ret += f"__**{i['team1']} VS {i['team2']}**__\nEvent: {live_dict['event']}\nMaps: {live_dict['maps'][0]}, {live_dict['maps'][1]}, {live_dict['maps'][2]}\nCurrent Map: {live_dict['cur_map']} \nMap Score: {live_dict['map_score']} \nCurrent Map Score: {live_dict['cur_score']} \nVLR: {i['link']}\n"
+        await ctx.author.send(ret)
+
+# {i['team1']} VS {i['team2']} {i['link']}
+
+
+def getRankings(link):
+    r = requests.get(link)
+    soup = BeautifulSoup(r.content, 'html.parser')
+    teams = soup.find_all('div', class_='ge-text',limit=5, recursive=True)
+    ret = ""
+    c = 1
+    for i in teams:
+        l = i.text.split()
+        t = ' '.join(l[:l.index([i for i in l if i.startswith('#')][0])])
+        ret += str(c)+". "+ t + "\n"
+        c +=1
+    return ret
+
+@bot.command(
+    name="rankings",
+    description="Team Ranking",
+    scope=994186669265784922,
+    options = [
+        interactions.Option(
+            name="region",
+            description="Enter region",
+            type=interactions.OptionType.STRING,
+        ),
+    ],
+)
+
+async def rankings(ctx: interactions.CommandContext, region: str = ""):
+    region = region.lower()
+    reg = ""
+    if region == "na" or region == "north america":
+        reg = "/north-america"
+    elif region == "eu" or region == "europe" or region == "emea":
+        reg = "/europe"
+    elif region == "br" or region == "brazil":
+        reg = "/brazil"
+    elif region == "ap" or region == "asia pacific" or region == "asia":
+        reg = "/asia-pacific"
+    elif region == "kr" or region == "korea":
+        reg = "/korea"
+    elif region == "china" or region == "ch":
+        reg = "/china"
+    elif region == "jp" or region == "japan":
+        reg = "/japan"
+    elif region == "las" or region == "latin america south" or region == "latin america s":
+        reg = "/la-s"
+    elif region == "lan" or region == "latin america north" or region == "latin america n":
+        reg = "/la-n"
+    elif region == "oce" or region == "oceania":
+        reg = "/oceania"
+    elif region == "gc" or region == "game changers":
+        reg = "/gc"
+    elif region == "mena":
+        reg = "/mena"
+    else:
+        reg = "invalid"
+        await ctx.send("Not a Region")
+    if reg != "invalid":
+        link = "https://www.vlr.gg/rankings" + reg
+        l = await ctx.send("Getting data")
+        ranks = getRankings(link)
+        await l.edit(content=ranks)
+
 
 
 bot.start()

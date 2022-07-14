@@ -21,9 +21,15 @@ def getLiveMatches():
 
 def getMatchScore(match_data):
     live_dict = {}
-    r = requests.get("https://www.vlr.gg/114530/akrew-vs-knights-nerd-street-summer-championship-2022-open-12-gf")
+    r = requests.get("https://www.vlr.gg/112286/kr-esports-vs-optic-gaming-valorant-champions-tour-stage-2-masters-copenhagen-decider-a")
     # r = requests.get(match_data["link"])
     soup = BeautifulSoup(r.content, 'html.parser')
+    event = soup.find('div', class_="match-header-super")
+    ev_txt = event.findChild('div').findChild('div').text.split()
+    str = ""
+    for i in ev_txt:
+        str += i +" "
+    live_dict["event"] = str
     map_data_div = soup.find('div', class_="js-spoiler")
     # print(map_data_div)
     children = map_data_div.findChildren('span')
@@ -46,5 +52,17 @@ def getMatchScore(match_data):
     print(live_dict)
     return live_dict
 
-l = getLiveMatches()
-getMatchScore(l)
+def getRankings(link):
+    r = requests.get(link)
+    soup = BeautifulSoup(r.content, 'html.parser')
+    teams = soup.find_all('div', class_='ge-text',limit=10, recursive=True)
+    ret = ""
+    c = 1
+    for i in teams:
+        l = i.text.split()
+        t = ' '.join(l[:l.index([i for i in l if i.startswith('#')][0])])
+        ret += str(c)+". "+ t + "\n"
+        c +=1
+    print(ret)
+    return ret
+getRankings("https://www.vlr.gg/rankings/mena")
