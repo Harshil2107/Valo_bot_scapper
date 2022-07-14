@@ -5,60 +5,13 @@
 import requests
 from bs4 import BeautifulSoup
 import discord
+import interactions
 from dotenv import load_dotenv
 import os
-import random
-from discord.ext import commands
-# from discord_slash import SlashCommand, SlashContext
 
-client = discord.Bot(command_prefix='!', intents = discord.Intents.all())
-
-# slash = SlashCommand(client)
-token = os.getenv('TOKEN')
-bot_id = 'OTk0MTg3MjQ5NzExMzI5MzYw.GSGEcI.xDoVsoGFyUL3PBgbFcVua9xMDudjAKU02ZkCXA'
-client.run(bot_id)
-# @slash.slash(name="test")
-# async def _test(ctx: SlashContext):
-#     await ctx.send("Hello World!")
-@client.command(name="live")
-async def livematch(ctx):
-    ret ="Live Matchs\n"
-    live = getLiveMatches()
-    for i in live:
-        ret = ret +i["team1"]+" VS "+ i["team2"]+"\nVLR link : "+ i["link"]
-    await ctx.send(ret)
-
-@client.event
-async def on_ready():
-    print("Logged in as a bot {0.user}".format(client))
-
-# @client.event
-# async def on_message(message):
-#     username = str(message.author).split("#")[0]
-#     channel = str(message.channel.name)
-#     user_message = str(message.content)
-#
-#     print(f'Message {user_message} by {username} on {channel}')
-#
-#     if message.author == client.user:
-#         return
-#
-#     if True:
-#         if user_message.lower() == "hello" or user_message.lower() == "hi":
-#             await message.channel.send(f'Hello {username}')
-#             return
-#         elif user_message.lower() == "bye":
-#             await message.channel.send(f'Bye {username}')
-#         elif user_message.lower() == "tell me a joke":
-#             jokes = [" Can someone please shed more\
-#                 light on how my lamp got stolen?",
-#                      "Why is she called llene? She\
-#                      stands on equal legs.",
-#                      "What do you call a gazelle in a \
-#                      lions territory? Denzel."]
-#             await message.channel.send(random.choice(jokes))
-
-
+load_dotenv()
+token = os.getenv('DISCORD_TOKEN')
+bot = interactions.Client(token=token)
 
 
 def getLiveMatches():
@@ -77,14 +30,65 @@ def getLiveMatches():
             match['team' + str(i)] = teams.findChild('div', class_='text-of').text.split()[0]
             i += 1
         live_matchs.append(match)
-    print(live_matchs)
     return live_matchs
 
+
+@bot.command(
+    name="live_matches",
+    description="Get live valorant matches",
+)
+async def live_matches(ctx: interactions.CommandContext):
+    live = getLiveMatches()
+    ret = ""
+    if (len(live) == 0):
+        await ctx.send("No live matchs")
+    for i in live:
+        ret += f"{i['team1']} VS {i['team2']}  \n VLR: {i['link']} \n"
+    await ctx.send(ret)
+
+
 def getMatchScore(match_data):
-    print(match_data)
-    r = requests.get(match_data['link'])
+    live_dict = {}
+    r = requests.get("https://www.vlr.gg/114530/akrew-vs-knights-nerd-street-summer-championship-2022-open-12-gf")
+    # r = requests.get(match_data["link"])
     soup = BeautifulSoup(r.content, 'html.parser')
-    map_data_div = soup()
+    map_data_div = soup.find('div', class_="js-spoiler")
+    # print(map_data_div)
+    children = map_data_div.findChildren('span')
+    map_score = ""
+    for i in children:
+        map_score += i.text.split()[0] + " "
+    maps_divs = soup.find_all('div', class_="js-map-switch", recursive=True)
+    maps = []
+    for i in maps_divs:
+        for j in i.findChildren('div', recursive=True):
+            maps.append(j.text.split()[1])
+    live_map = soup.find('div', class_="map", recursive=True).text.split()[0]
+    live_dict["maps"] = maps
+    live_dict["map_score"] = map_score
+    live_dict["cur_map"] = live_map
+    score = soup.find_all('div', class_="score", recursive=True)
+    i = maps.index(live_map) * 2
+    cur_score = score[i].text.split()[0] + " : " + score[i + 1].text.split()[0]
+    live_dict["cur_score"] = cur_score
+
+    return live_dict
 
 
+@bot.command(
+    name="live_match_scores",
+    description="Get current scores of all live matches",
+    scope=994186669265784922
+)
+async def live_match_scores(ctx: interactions.CommandContext):
+    live = getLiveMatches()
+    ret = ""
+    if (len(live) == 0):
+        await ctx.send("No live matches")
+    for i in live:
+        live_dict = getMatchScore(i)
+        ret += f"__**{i['team1']} VS {i['team2']}**__\n Maps: {live_dict['maps'][0]}, {live_dict['maps'][1]}, {live_dict['maps'][2]} \n Current Map: {live_dict['cur_map']} \n Map Score: {live_dict['map_score']} \n Current Map Score: {live_dict['cur_score']} \n VLR: {i['link']} \n"
+    await ctx.send(ret)
 
+
+bot.start()
