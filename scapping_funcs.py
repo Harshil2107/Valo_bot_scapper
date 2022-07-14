@@ -14,7 +14,7 @@ def getLiveMatches():
         match['link'] = "https://www.vlr.gg" + i.parent.parent.get('href')
         i = 1
         for teams in d:
-            match['team' + str(i)] = teams.findChild('div', class_='text-of').text.split()[0]
+            match['team' + str(i)] =' '.join(teams.findChild('div', class_='text-of').text.split())
             i += 1
         live_matchs.append(match)
     return live_matchs
@@ -65,4 +65,22 @@ def getRankings(link):
         c +=1
     print(ret)
     return ret
-getRankings("https://www.vlr.gg/rankings/mena")
+
+
+def getTodaymatchs():
+    r= requests.get("https://www.vlr.gg/matches")
+    soup = BeautifulSoup(r.content, 'html.parser')
+    today = soup.find_all('div', class_="wf-card", recursive=True)
+    m_divs = today[1].findChildren('div', class_="match-item-vs-team-name", recursive=True)
+    todays_matches = []
+    for i in range(0, len(m_divs),2):
+        match = {}
+        eta_div = m_divs[i].parent.parent.parent.findChild('div', class_="ml-eta", recursive=True)
+
+        match['link'] = "https://www.vlr.gg" + m_divs[i].parent.parent.parent.get('href')
+        match['team1'] =' '.join(m_divs[i].findChild('div', class_='text-of').text.split())
+        match['team2'] = ' '.join(m_divs[i+1].findChild('div', class_='text-of').text.split())
+        match['eta'] = eta_div.text
+        todays_matches.append(match)
+    print(todays_matches)
+getTodaymatchs()
