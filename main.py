@@ -49,8 +49,8 @@ async def live_matches(ctx: interactions.CommandContext):
 
 def getMatchScore(match_data):
     live_dict = {}
-    r = requests.get("https://www.vlr.gg/114530/akrew-vs-knights-nerd-street-summer-championship-2022-open-12-gf")
-    # r = requests.get(match_data["link"])
+    # r = requests.get("https://www.vlr.gg/114530/akrew-vs-knights-nerd-street-summer-championship-2022-open-12-gf")
+    r = requests.get(match_data["link"])
     soup = BeautifulSoup(r.content, 'html.parser')
     event = soup.find('div', class_="match-header-super")
     ev_txt = event.findChild('div').findChild('div').text.split()
@@ -93,11 +93,11 @@ async def live_match_scores(ctx: interactions.CommandContext):
     if (len(live) == 0):
         await ctx.send("No live matches")
     else:
-        await ctx.send("Sent Match Data in DM")
+        msg = await ctx.send("Getting data ...")
         for i in live:
             live_dict = getMatchScore(i)
             ret += f"__**{i['team1']} VS {i['team2']}**__\nEvent: {live_dict['event']}\nMaps: {live_dict['maps'][0]}, {live_dict['maps'][1]}, {live_dict['maps'][2]}\nCurrent Map: {live_dict['cur_map']} \nMap Score: {live_dict['map_score']} \nCurrent Map Score: {live_dict['cur_score']} \nVLR: {i['link']}\n"
-        await ctx.author.send(ret)
+        await msg.edit(content=ret)
 
 # {i['team1']} VS {i['team2']} {i['link']}
 
@@ -124,6 +124,7 @@ def getRankings(link):
             name="region",
             description="Enter region",
             type=interactions.OptionType.STRING,
+            required= True
         ),
     ],
 )
