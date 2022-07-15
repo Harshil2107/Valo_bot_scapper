@@ -55,9 +55,10 @@ def getMatchScore(match_data):
 def getRankings(link):
     r = requests.get(link)
     soup = BeautifulSoup(r.content, 'html.parser')
-    teams = soup.find_all('div', class_='ge-text',limit=10, recursive=True)
+    teams = soup.find_all('div', class_='ge-text',limit=5, recursive=True)
     ret = ""
     c = 1
+    print(len(teams))
     for i in teams:
         l = i.text.split()
         t = ' '.join(l[:l.index([i for i in l if i.startswith('#')][0])])
@@ -83,4 +84,4 @@ def getTodaymatchs():
         match['eta'] = eta_div.text
         todays_matches.append(match)
     print(todays_matches)
-getTodaymatchs()
+getRankings("https://www.vlr.gg/rankings/north-america")

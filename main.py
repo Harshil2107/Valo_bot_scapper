@@ -84,7 +84,7 @@ def getMatchScore(match_data):
 @bot.command(
     name="live_match_scores",
     description="Get current scores of all live matches",
-    scope=994186669265784922
+    # scope=994186669265784922
 )
 async def live_match_scores(ctx: interactions.CommandContext):
     live = getLiveMatches()
@@ -95,7 +95,7 @@ async def live_match_scores(ctx: interactions.CommandContext):
         msg = await ctx.send("Getting data ...")
         for i in live:
             live_dict = getMatchScore(i)
-            ret += f"__**{i['team1']} VS {i['team2']}**__\nEvent: {live_dict['event']}\nMaps: {live_dict['maps'][0]}, {live_dict['maps'][1]}, {live_dict['maps'][2]}\nCurrent Map: {live_dict['cur_map']} \nMap Score: {live_dict['map_score']} \nCurrent Map Score: {live_dict['cur_score']} \nVLR: {i['link']}\n"
+            ret += f"__**{i['team1']} VS {i['team2']}**__\nEvent: {live_dict['event']}\nMaps: {live_dict['maps'][0]}, {live_dict['maps'][1]}, {live_dict['maps'][2]}\nCurrent Map: {live_dict['cur_map']} \nMap Score: {live_dict['map_score']} \nCurrent Map Score: {live_dict['cur_score']} \n"
         await msg.edit(content=ret)
 
 
@@ -119,7 +119,7 @@ def getRankings(link):
 @bot.command(
     name="rankings",
     description="Team Ranking",
-    scope=994186669265784922,
+    # scope=994186669265784922,
     options=[
         interactions.Option(
             name="region",
@@ -176,17 +176,20 @@ def getTodaymatchs():
         match = {}
         eta_div = m_divs[i].parent.parent.parent.findChild('div', class_="ml-eta", recursive=True)
 
-        match['link'] = "https://www.vlr.gg" + m_divs[i].parent.parent.parent.get('href')
+        # match['link'] = "https://www.vlr.gg" + m_divs[i].parent.parent.parent.get('href')
         match['team1'] =' '.join(m_divs[i].findChild('div', class_='text-of').text.split())
         match['team2'] = ' '.join(m_divs[i+1].findChild('div', class_='text-of').text.split())
-        match['eta'] = eta_div.text
+        if eta_div != None:
+            match['eta'] = eta_div.text
+        else:
+            match['eta'] = "live"
         todays_matches.append(match)
     return todays_matches
 
 @bot.command(
     name="todays_matches",
     description="Get today's matches",
-    scope=994186669265784922,
+    # scope=994186669265784922,
 )
 async def todays_matches(ctx: interactions.CommandContext):
     today = getTodaymatchs()
@@ -196,8 +199,15 @@ async def todays_matches(ctx: interactions.CommandContext):
     else:
         msg = await ctx.send("Getting data ...")
         for i in today:
-            ret += f"__**{i['team1']} VS {i['team2']}**__\nUpcoming: {i['eta']}\nVLR: {i['link']} \n"
+            ret += f"__**{i['team1']} VS {i['team2']}**__\nUpcoming: {i['eta']}\n"
         await msg.edit(content=ret)
 
-
+@bot.command(
+    name= "help",
+    description="command usage help",
+)
+async def help(ctx: interactions.CommandContext):
+    ret = f"__**Commands**__\n**/live_matches :** No arguments\n**/live_match_scores :** No arguments\n**/todays_matches :** No arguments" \
+          f"\n**/rankings :** Region (Takes abrivations as well as full names like NA or North America) not case sensitive"
+    await ctx.send(ret)
 bot.start()
